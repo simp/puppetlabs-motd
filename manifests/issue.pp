@@ -25,18 +25,21 @@ class motd::issue (
     fail('If $link_to_issue is false, $net_content needs to be provided.')
   }
 
-  file {
-    default:
-      ensure => file,
-      mode   => '0644',
-      owner  => 'root',
-      group  => 'root';
-    '/etc/issue':
-      content => $content;
-    '/etc/issue.net':
-      content => $net_content,
-      source  => $net_source,
-      require => File['/etc/issue'];
+  file { '/etc/issue':
+    ensure  => file,
+    mode    => '0644',
+    owner   => 'root',
+    group   => 'root',
+    content => $content
+  }
+  file { '/etc/issue.net':
+    ensure  => file,
+    mode    => '0644',
+    owner   => 'root',
+    group   => 'root',
+    content => $net_content,
+    source  => $net_source,
+    require => File['/etc/issue']
   }
 
 }
