@@ -15,11 +15,10 @@ describe 'motd::issue', type: :class do
       it do
         should contain_File('/etc/issue').with(
           ensure: 'file',
-          content: 'puppet:///modules/motd/issue'
+          content: /ATTENTION/
         )
         should contain_File('/etc/issue.net').with(
           ensure: 'file',
-          content: nil,
           source: 'file:///etc/issue'
         )
       end
@@ -39,16 +38,16 @@ describe 'motd::issue', type: :class do
       end
     end
 
-    context 'When link_to_issue is true' do
+    context 'When net_link is true' do
       let(:params) do
         {
-          link_to_issue: true,
+          net_link: true
         }
       end
       it do
         should contain_File('/etc/issue').with(
           ensure: 'file',
-          content: 'puppet:///modules/motd/issue'
+          content: /ATTENTION/
         )
         should contain_File('/etc/issue.net').with(
           ensure: 'file',
@@ -57,30 +56,29 @@ describe 'motd::issue', type: :class do
       end
     end
 
-    context 'When link_to_issue is false and net_content is specified' do
+    context 'When net_link is false and net_content is specified' do
       let(:params) do
         {
-          link_to_issue: false,
+          net_link: false,
           net_content: 'Hello!'
         }
       end
       it do
         should contain_File('/etc/issue').with(
           ensure: 'file',
-          content: 'puppet:///modules/motd/issue'
+          content: /ATTENTION/
         )
         should contain_File('/etc/issue.net').with(
           ensure: 'file',
-          source: nil,
           content: 'Hello!'
         )
       end
     end
 
-    context 'When link_to_issue is false and net_content is not specified' do
+    context 'When net_link is false and net_content is not specified' do
       let(:params) do
         {
-          link_to_issue: false,
+          net_link: false
         }
       end
       it do
@@ -89,5 +87,4 @@ describe 'motd::issue', type: :class do
     end
 
   end
-
 end

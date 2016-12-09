@@ -1,28 +1,71 @@
 # Manage /etc/issue and /etc/issue.net
 #
-# @param content
-#   Defaults to a stock `/etc/issue` file in the module. Provide a custom
-#   string or file reference to customize. Follows the File content
-#   parameter syntax.
-# @param net_source
-#   The source where `/etc/issue.net` comes from. Defaults to a symlink to `/etc/issue`.
-#   Follows the File source parameter syntax.
-# @param net_content
+# @param profile [String]
+#   A pre-included banner that can be used out of the box.
 #
+#   Will be overridden by `$content` and/or `$net_content`
+#
+#   Valid values include:
+#     * default     => Standard, we watch everything
+#     * lite        => We only watch for bad things
+#     * us_doc      => U.S. Department of Commerce
+#     * us_doc_lite => U.S. Department of Commerce lite
+#     * us_dod      => U.S. Department of Defense (STIG Compat)
+#     * us_noaa     => U.S. National Oceanic and Atmospehric
+#                      Administration
+#
+# @param content [String]
+#   Defaults to a stock `/etc/issue` file in the module. Provide a custom
+#   string or file reference to customize. Follows the `File` resource
+#   `content` parameter syntax.
+#
+# @param net_link [Boolean]
+#   If set, links `/etc/issue.net` to `/etc/issue`
+#
+# @param net_content [String]
+#   If `$net_link` is `false`, this content will be written to the
+#   `/etc/issue.net` file on the system. Follows the `File` resource `content`
+#   parameter syntax.
 #
 class motd::issue (
-  $content       = 'puppet:///modules/motd/issue',
-  $link_to_issue = true,
-  $net_content   = undef
+  $profile     = 'default',
+  $content     = undef,
+  $net_link    = true,
+  $net_content = undef
 ) {
+  $_valid_profiles = [
+    'default',
+    'lite',
+    'us_doc',
+    'us_doc_lite',
+    'us_dod',
+    'us_noaa'
+  ]
 
-  $net_source = $link_to_issue ? {
+  if $content {
+    $_content = $content
+  }
+  else {
+    if $profile in $_valid_profiles {
+      $_content = file("${module_name}/issue/${profile}")
+    }
+    else {
+      $_valid_profile_string = join($_valid_profiles,', ')
+      fail("You must choose a valid profile ${_valid_profile_string}")
+    }
+  }
+
+  if $::kernel == 'windows' {
+    fail("${module_name}::issue does not support ${::kernel}")
+  }
+
+  $net_source = $net_link ? {
     true    => 'file:///etc/issue',
     default => undef
   }
 
-  if !$link_to_issue and !$net_content {
-    fail('If $link_to_issue is false, $net_content needs to be provided.')
+  if !$net_link and !$net_content {
+    fail('If "$net_link" is false, "$net_content" needs to be provided.')
   }
 
   file { '/etc/issue':
@@ -30,8 +73,9 @@ class motd::issue (
     mode    => '0644',
     owner   => 'root',
     group   => 'root',
-    content => $content
+    content => $_content
   }
+
   file { '/etc/issue.net':
     ensure  => file,
     mode    => '0644',
@@ -41,5 +85,4 @@ class motd::issue (
     source  => $net_source,
     require => File['/etc/issue']
   }
-
 }
